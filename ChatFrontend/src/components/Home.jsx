@@ -21,6 +21,8 @@ export const Home = () => {
     // ❌ DO NOT disconnect here
   }, [user?._id]);
 
+  console.log(user)
+
   return (
     <div className="flex">
       <UserInterface />
