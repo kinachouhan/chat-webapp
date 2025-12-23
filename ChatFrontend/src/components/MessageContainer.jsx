@@ -6,7 +6,7 @@ import { socket } from "../socket";
 import { addMessage, clearMessages } from "../redux/messageSlice";
 import { updateUserLastMessage, clearUnread } from "../redux/userSlice";
 
-export const MessageContainer = () => {
+export const MessageContainer = ({ setMobileChatOpen }) => {
     const dispatch = useDispatch();
 
     const [text, setText] = useState("");
@@ -72,7 +72,7 @@ export const MessageContainer = () => {
             if (isChatOpen) {
                 dispatch(addMessage(msg));
                 dispatch(clearUnread(currentChat._id));
-            } 
+            }
 
             else {
                 dispatch(updateUserLastMessage({
@@ -116,9 +116,20 @@ export const MessageContainer = () => {
 
     return (
         <div className="bg-[#2a2b2e] text-white w-full h-screen flex flex-col">
+
+
             {selectedUser ? (
                 <>
+                   
                     <div className="p-4 flex gap-3 items-center">
+                        {window.innerWidth < 768 && (
+                            <button
+                                onClick={() => setMobileChatOpen(false)}
+                                className="p-2 m-2  rounded"
+                            >
+                                ← 
+                            </button>
+                        )}
                         <img className="w-[50px] h-[50px]" src={selectedUser.avatar} />
                         <div>
                             <h1>{selectedUser.fullName}</h1>
@@ -144,7 +155,7 @@ export const MessageContainer = () => {
                             value={text}
                             onKeyDown={e => {
                                 if (e.key === "Enter") {
-                                    e.preventDefault(); 
+                                    e.preventDefault();
                                     sendMessage();
                                 }
                             }}

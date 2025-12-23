@@ -1,110 +1,102 @@
 import { BsFillChatHeartFill } from "react-icons/bs";
-import { User } from "./User"
-import { useNavigate } from "react-router-dom"
-import { useEffect } from "react";
-import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux"
-import { fetchOtherUser, fetchUser, setSelectedUser , clearUnread } from "../redux/userSlice";
+import { User } from "./User";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchOtherUser, fetchUser, setSelectedUser, clearUnread } from "../redux/userSlice";
+import toast from "react-hot-toast";
 
+export const UserInterface = ({ setMobileChatOpen }) => {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const dispatch = useDispatch();
 
-export const UserInterface = () => {
+  const { user, otherUsers, selectedUser } = useSelector(state => state.user);
 
-    const navigate = useNavigate()
-   const [search, setSearch] = useState("");
+  useEffect(() => {
+    dispatch(fetchUser());
+    dispatch(fetchOtherUser());
+  }, [dispatch]);
 
+  const filteredUser = search
+    ? otherUsers.filter(u =>
+        u.userName.toLowerCase().includes(search.toLowerCase()) ||
+        u.fullName.toLowerCase().includes(search.toLowerCase())
+      )
+    : otherUsers;
 
-    const handleLogout = async () => {
-        const response = await fetch("http://localhost:5000/api/v1/user/logout", {
-            method: "POST",
-            credentials: "include"
-        }
-        )
-        const data = await response.json()
-        if (data.success === true) {
-            navigate("/login")
-        }
+  const handleUserClick = (users) => {
+    dispatch(setSelectedUser(users));
+    setSearch("");
+    dispatch(clearUnread(users._id));
+
+    if (window.innerWidth < 768 ) {
+      setMobileChatOpen(true); // Open chat on mobile
     }
+  };
 
-    const dispatch = useDispatch()
-
-    const { user, loading, error, otherUsers, selectedUser } = useSelector(state => state.user)
-
-    useEffect(() => {
-        dispatch(fetchUser())
-        dispatch(fetchOtherUser())
-    }, [dispatch]);
-
-
-    const filteredUser =  search ?
-    otherUsers.filter( (user)=>{
-         return(
-             user.userName.toLowerCase().includes(search.toLowerCase()) || user.fullName.toLowerCase().includes(search.toLowerCase())
-         )
-    })
-    : otherUsers
  
-    const handleUserClick = (users)=>{
-         dispatch(setSelectedUser(users))
-         setSearch("")
-         dispatch( clearUnread(users._id))
+
+
+
+  const handleLogout = async () => {
+    const res = await fetch("http://localhost:5000/api/v1/user/logout", {
+      method: "POST",
+      credentials: "include"
+    });
+    const data = await res.json();
+    if (data.success) {
+      navigate("/login");
+      toast.success("Logged out successfully!");
     }
+  };
 
+ return (
+    <div className="bg-[#1e1e1e] text-white h-screen flex flex-col w-full md:w-[350px] border-r border-gray-800">
+      {/* Header */}
+      <div className="flex gap-2 p-4 items-center border-b border-gray-700">
+        <BsFillChatHeartFill className="text-2xl" />
+        <h1 className="font-bold text-xl">Chat App</h1>
+      </div>
 
-    return (
-        <div className="bg-[#1e1e1e] text-white  h-screen border-r border-gray-800 flex flex-col gap-4 relative max-w-[350px] w-full">
-            <div className=" p-4 rounded-sm flex gap-2 justify-center items-center ">
-                <h1 className="text-2xl"><BsFillChatHeartFill /></h1>
-                <h1 className="font-bold text-2xl">Chat App</h1>
-            </div>
+      {/* Search */}
+      <div className="p-4 border-b border-gray-700">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search here"
+          className="w-full p-2 rounded bg-[#2a2b2e] text-white"
+        />
+      </div>
 
+      {/* User list */}
+      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
+        {filteredUser.map(u => (
+          <div
+            key={u._id}
+            onClick={() => handleUserClick(u)}
+            className={`p-2 rounded cursor-pointer transition-all
+              ${selectedUser?._id === u._id ? "bg-blue-600" : "bg-[#2a2b2e] hover:bg-[#343541]"}
+            `}
+          >
+            <User users={u} />
+          </div>
+        ))}
+      </div>
 
-            <div className="h-1 w-full border-b border-gray-400"></div>
-
-
-            <div className="px-4">
-
-                <input value={search}  onChange={(e)=>setSearch(e.target.value)} className="bg-[#2a2b2e] p-2 rounded-sm w-full" placeholder="Search here" />
-
-            </div>
-
-
-            <div className="p-2 flex flex-col gap-5 overflow-y-auto flex-1">
-                {
-                    filteredUser.map((users) => {
-                        return (
-                            <div key={users._id}
-                                onClick={()=>handleUserClick(users)}
-                                className={`p-2 rounded cursor-pointer transition-all
-            ${selectedUser?._id === users._id
-                                        ? "bg-blue-600"
-                                        : "bg-[#2a2b2e] hover:bg-[#343541]"
-                                    }`}
-                            >
-                                <User users={users} key={users._id} />
-                            </div>
-                        )
-
-                    })
-                }
-            </div>
-
-
-            <div className=" flex flex-col ">
-                <div className="h-1 w-full border-b border-gray-400"></div>
-                <div className="flex p-4 justify-between">
-                    <div className="flex gap-4 items-center">
-                        <img className="w-[50px] h-[50px]" src={user?.avatar} />
-                        <div>
-                            <h1>{user?.fullName}</h1>
-                            <h1>@{user?.userName}</h1>
-                        </div>
-
-                    </div>
-                    <div className="flex items-center">
-                        <button onClick={handleLogout} className="bg-blue-500 p-2 rounded-sm ">Logout</button>
-                    </div>
-                </div>
-            </div>
+      {/* Footer: Current User + Logout */}
+      <div className="p-4 border-t border-gray-700 flex items-center justify-between">
+        <div className="flex gap-3 items-center">
+          <img src={user?.avatar} className="w-12 h-12 rounded-full" />
+          <div>
+            <h1 className="font-semibold">{user?.fullName}</h1>
+            <h1 className="text-gray-400 text-sm">@{user?.userName}</h1>
+          </div>
         </div>
-    )
-}
+        <button onClick={handleLogout} className="bg-blue-500 px-3 py-1 rounded-sm text-white">
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+};
