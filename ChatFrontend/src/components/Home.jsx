@@ -1,32 +1,32 @@
 import { useSelector } from "react-redux";
 import { MessageContainer } from "./MessageContainer";
 import { UserInterface } from "./UserInterface";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { socket } from "../socket";
-import { initSocketListeners } from "../initSocketListeners "
+import { initSocketListeners } from "../initSocketListeners .js";
 
 export const Home = () => {
   const user = useSelector(state => state.user.user);
+  const [mobileChatOpen, setMobileChatOpen] = useState(false); // Mobile toggle
 
   useEffect(() => {
     if (!user?._id) return;
-
-
     socket.auth = { userId: user._id };
     socket.connect();
-
-  
     initSocketListeners();
-
-    // ❌ DO NOT disconnect here
   }, [user?._id]);
 
-  console.log(user)
-
   return (
-    <div className="flex">
-      <UserInterface />
-      <MessageContainer />
+    <div className="flex w-full h-screen">
+      {/* User list */}
+      {(!mobileChatOpen || window.innerWidth >= 768) && (
+        <UserInterface setMobileChatOpen={setMobileChatOpen} />
+      )}
+
+      {/* Chat messages */}
+      {(mobileChatOpen || window.innerWidth >= 768) && (
+        <MessageContainer setMobileChatOpen={setMobileChatOpen} />
+      )}
     </div>
   );
 };
